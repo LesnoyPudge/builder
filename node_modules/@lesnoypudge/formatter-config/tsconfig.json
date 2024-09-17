@@ -29,8 +29,8 @@
 
         "noEmit": false,
         "outDir": "build",
-        "sourceMap": true,
-        "declaration": true,
+        "sourceMap": false,
+        "declaration": false,
 
         // "moduleResolution": "NodeNext",
         // "module": "NodeNext",
