@@ -4,7 +4,7 @@
     "type": "module",
     "main": "./build/index.js",
     "bin": {
-        "builder": "node ./build/index.js"
+        "builder": "./build/index.js"
     },
     "scripts": {
         "publish": "npm publish --access public",

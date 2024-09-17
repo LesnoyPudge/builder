@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,6 +10,7 @@ import { FolderTree } from "@lesnoypudge/utils";
 function getConfigAndFiles() {
     const fileName = 'tsconfig.build.json'
     const configFilePath = process.cwd() + `/${fileName}`;
+    console.log(`using ${configFilePath} to build`);
     const configFile = ts.readConfigFile(configFilePath, ts.sys.readFile);
 
     if (configFile.error) {
