@@ -1,0 +1,45 @@
+{
+    "include": [
+        "./src/**/*.ts",
+        "node_modules/@types"
+    ],
+    "compilerOptions": {
+        "explainFiles": false,
+        "baseUrl": ".",
+        "paths": {},
+        "types": [],
+
+        "jsx": "react-jsx",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "target": "ES2022",
+        "verbatimModuleSyntax": false,
+        "allowJs": true,
+        "resolveJsonModule": true,
+        "moduleDetection": "auto",
+
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noFallthroughCasesInSwitch": true,
+
+        "noEmit": false,
+
+        // "moduleResolution": "NodeNext",
+        // "module": "NodeNext",
+        // "outDir": "dist",
+        // "sourceMap": true,
+        // "declaration": true,
+
+        "moduleResolution": "Bundler",
+        "module": "ESNext",
+        "outDir": "build",
+        "sourceMap": true,
+        "declaration": true,
+
+        "lib": [
+            "ES2022",
+            // "DOM",
+            // "DOM.Iterable",
+        ],
+    }
+}
