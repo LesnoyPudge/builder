@@ -4,6 +4,8 @@
     "main": "./build/index.js",
     "bin": "./build/index.js",
     "scripts": {
+        "publish": "npm publish --access public",
+        "deploy": "git add . && git commit -m 'update' && git push && git status",
         "build": "node --experimental-strip-types ./src/index.ts"
     },
     "keywords": [
