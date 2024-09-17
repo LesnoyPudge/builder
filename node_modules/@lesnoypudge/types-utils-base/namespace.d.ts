@@ -1,1 +1,0 @@
-export type * as T from "./src/index.d.ts";
