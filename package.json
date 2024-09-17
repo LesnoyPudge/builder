@@ -1,8 +1,10 @@
 {
     "name": "@lesnoypudge/builder",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "main": "./build/index.js",
-    "bin": "./build/index.js",
+    "bin": {
+        "builder": "./build/index.js"
+    },
     "scripts": {
         "publish": "npm publish --access public",
         "deploy": "git add . && git commit -m 'update' && git push && git status",
