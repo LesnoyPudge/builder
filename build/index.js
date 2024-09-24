@@ -27,8 +27,6 @@ const filterFiles = (fileNames, exclude) => {
     return fileNames.filter(file => !excludedFiles.has(path.resolve(file)));
 };
 const isUnsolvedRelativePath = (relativePath) => {
-    if (!relativePath.startsWith('./'))
-        return false;
     if (relativePath.match(/\.[a-zA-Z0-9]+$/))
         return false;
     return true;
@@ -65,7 +63,7 @@ const transformFiles = (options) => {
             if (!file.name.endsWith('.js'))
                 return;
             const content = fs.readFileSync(file.path, 'utf8');
-            const updatedContent = content.replace(/(from\s+['"])(\.\/[^'"]+)(['"])/g, (match, leftQuote, relativePath, rightQuote) => {
+            const updatedContent = content.replace(/(from\s+['"])([^'"]+)(['"])/g, (match, leftQuote, relativePath, rightQuote) => {
                 if (!isUnsolvedRelativePath(relativePath))
                     return match;
                 const newRelativePath = getJsExtension(file.path, relativePath);
@@ -84,3 +82,4 @@ const transformFiles = (options) => {
     transpileFiles(filesToTranspile, options);
     transformFiles(options);
 })();
+//# sourceMappingURL=index.js.map

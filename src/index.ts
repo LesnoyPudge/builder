@@ -44,7 +44,6 @@ const filterFiles = (
 }
 
 const isUnsolvedRelativePath = (relativePath: string) => {
-    if (!relativePath.startsWith('./')) return false;
     if (relativePath.match(/\.[a-zA-Z0-9]+$/)) return false;
     
     return true;
@@ -105,10 +104,10 @@ const transformFiles = (
             
             const file = fileOrFolder;
             if (!file.name.endsWith('.js')) return;
-
+            
             const content = fs.readFileSync(file.path, 'utf8');
             const updatedContent = content.replace(
-                /(from\s+['"])(\.\/[^'"]+)(['"])/g,
+                /(from\s+['"])([^'"]+)(['"])/g,
                 (match, leftQuote, relativePath, rightQuote) => {
                     if (!isUnsolvedRelativePath(relativePath)) return match;
                     
