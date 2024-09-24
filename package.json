@@ -1,10 +1,10 @@
 {
     "name": "@lesnoypudge/builder",
-    "version": "1.0.6",
+    "version": "1.0.5",
     "type": "module",
     "main": "./build/index.js",
     "bin": {
-        "builder": "./build/index.js"
+        "builder": "build/index.js"
     },
     "scripts": {
         "publish": "npm publish --access public",
