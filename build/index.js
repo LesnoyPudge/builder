@@ -3,9 +3,13 @@ import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
 import { replaceTscAliasPaths } from 'tsc-alias';
-import { FolderTree } from "@lesnoypudge/utils";
-function getConfigAndFiles() {
-    const fileName = 'tsconfig.build.json';
+import { FolderTree, invariant } from "@lesnoypudge/utils";
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+const argv = await yargs(hideBin(process.argv)).parse();
+const getConfigAndFiles = () => {
+    invariant(argv.file, '--file option is not provided');
+    const fileName = String(argv.file);
     const configFilePath = process.cwd() + `/${fileName}`;
     console.log(`using ${configFilePath} to build`);
     const configFile = ts.readConfigFile(configFilePath, ts.sys.readFile);
@@ -17,7 +21,7 @@ function getConfigAndFiles() {
         options: parsedConfig.options,
         fileNames: parsedConfig.fileNames
     };
-}
+};
 const filterFiles = (fileNames, exclude) => {
     const excludedFiles = new Set();
     (Array.isArray(exclude) ? exclude : [exclude]).forEach(pattern => {
@@ -31,16 +35,34 @@ const isUnsolvedRelativePath = (relativePath) => {
         return false;
     return true;
 };
-const getJsExtension = (sourceFilePath, relativePath) => {
+const getJsExtension = (sourceFilePath, somePath) => {
+    // if (!somePath.startsWith('.')) {
+    //     const rootBasedPath = somePath;
+    //     const pathFromRoot = path.join(process.cwd(), rootBasedPath)
+    //     const pathToIndex = `${pathFromRoot}/index.js`;
+    //     const pathToFile = `${pathFromRoot}.js`;
+    //     if (rootBasedPath.startsWith('src')) {
+    //         console.log({
+    //             pathToIndex, 
+    //             ex1: fs.existsSync(pathToIndex),
+    //             pathToFile,
+    //             ex2: fs.existsSync(pathToFile),
+    //         })
+    //     }
+    //     if (fs.existsSync(pathToIndex)) return `${rootBasedPath}/index.js`;
+    //     if (fs.existsSync(pathToFile)) return `${rootBasedPath}.js`;
+    //     return rootBasedPath;
+    // }
+    const relativePath = somePath;
     const dirPath = path.dirname(sourceFilePath);
     const jsRelativeFilePath = `${relativePath}.js`;
     const jsFilePath = path.resolve(dirPath, jsRelativeFilePath);
     const indexRelativeFilePath = `${relativePath}/index.js`;
     const indexFilePath = path.resolve(dirPath, indexRelativeFilePath);
-    if (fs.existsSync(jsFilePath))
-        return jsRelativeFilePath;
     if (fs.existsSync(indexFilePath))
         return indexRelativeFilePath;
+    if (fs.existsSync(jsFilePath))
+        return jsRelativeFilePath;
     return relativePath;
 };
 const transpileFiles = (fileNames, options) => {
@@ -63,10 +85,10 @@ const transformFiles = (options) => {
             if (!file.name.endsWith('.js'))
                 return;
             const content = fs.readFileSync(file.path, 'utf8');
-            const updatedContent = content.replace(/(from\s+['"])([^'"]+)(['"])/g, (match, leftQuote, relativePath, rightQuote) => {
-                if (!isUnsolvedRelativePath(relativePath))
+            const updatedContent = content.replace(/(from\s+['"])([^'"]+)(['"])/g, (match, leftQuote, somePath, rightQuote) => {
+                if (!isUnsolvedRelativePath(somePath))
                     return match;
-                const newRelativePath = getJsExtension(file.path, relativePath);
+                const newRelativePath = getJsExtension(file.path, somePath);
                 return `${leftQuote}${newRelativePath}${rightQuote}`;
             });
             fs.writeFileSync(file.path, updatedContent, 'utf8');

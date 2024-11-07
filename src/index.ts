@@ -3,12 +3,18 @@ import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
 import { replaceTscAliasPaths } from 'tsc-alias';
-import { FolderTree } from "@lesnoypudge/utils";
+import { FolderTree, invariant } from "@lesnoypudge/utils";
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 
 
-function getConfigAndFiles() {
-    const fileName = 'tsconfig.build.json'
+const argv = await yargs(hideBin(process.argv)).parse();
+
+const getConfigAndFiles = () => {
+    invariant(argv.file, '--file option is not provided');
+    
+    const fileName = String(argv.file);
     const configFilePath = process.cwd() + `/${fileName}`;
     console.log(`using ${configFilePath} to build`);
     const configFile = ts.readConfigFile(configFilePath, ts.sys.readFile);
@@ -51,8 +57,30 @@ const isUnsolvedRelativePath = (relativePath: string) => {
 
 const getJsExtension = (
     sourceFilePath: string,
-    relativePath: string
+    somePath: string
 ): string => {
+    // if (!somePath.startsWith('.')) {
+    //     const rootBasedPath = somePath;
+    //     const pathFromRoot = path.join(process.cwd(), rootBasedPath)
+    //     const pathToIndex = `${pathFromRoot}/index.js`;
+    //     const pathToFile = `${pathFromRoot}.js`;
+        
+    //     if (rootBasedPath.startsWith('src')) {
+    //         console.log({
+    //             pathToIndex, 
+    //             ex1: fs.existsSync(pathToIndex),
+    //             pathToFile,
+    //             ex2: fs.existsSync(pathToFile),
+    //         })
+    //     }
+
+    //     if (fs.existsSync(pathToIndex)) return `${rootBasedPath}/index.js`;
+    //     if (fs.existsSync(pathToFile)) return `${rootBasedPath}.js`;
+
+    //     return rootBasedPath;
+    // }
+    
+    const relativePath = somePath;
     const dirPath = path.dirname(sourceFilePath);
     const jsRelativeFilePath = `${relativePath}.js`;
     const jsFilePath = path.resolve(
@@ -65,8 +93,8 @@ const getJsExtension = (
         indexRelativeFilePath
     );
 
-    if (fs.existsSync(jsFilePath)) return jsRelativeFilePath;
     if (fs.existsSync(indexFilePath)) return indexRelativeFilePath;
+    if (fs.existsSync(jsFilePath)) return jsRelativeFilePath;
 
     return relativePath;
 }
@@ -108,12 +136,12 @@ const transformFiles = (
             const content = fs.readFileSync(file.path, 'utf8');
             const updatedContent = content.replace(
                 /(from\s+['"])([^'"]+)(['"])/g,
-                (match, leftQuote, relativePath, rightQuote) => {
-                    if (!isUnsolvedRelativePath(relativePath)) return match;
+                (match, leftQuote, somePath, rightQuote) => {
+                    if (!isUnsolvedRelativePath(somePath)) return match;
                     
                     const newRelativePath = getJsExtension(
                         file.path,
-                        relativePath,
+                        somePath,
                     )
 
                     return `${leftQuote}${newRelativePath}${rightQuote}`;
