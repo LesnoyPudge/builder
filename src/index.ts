@@ -3,6 +3,7 @@ import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
 import { replaceTscAliasPaths } from 'tsc-alias';
+import type { ReplaceTscAliasPathsOptions } from "tsc-alias";
 import { FolderTree, invariant } from "@lesnoypudge/utils";
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -10,15 +11,16 @@ import { hideBin } from 'yargs/helpers';
 
 
 const argv = await yargs(hideBin(process.argv)).parse();
+invariant(argv.file, '--file option is not provided');
 
-const getConfigAndFiles = () => {
-    invariant(argv.file, '--file option is not provided');
-    
+const getConfigAndFiles = async () => {
     const fileName = String(argv.file);
     const configFilePath = process.cwd() + `/${fileName}`;
-    console.log(`using ${configFilePath} to build`);
-    const configFile = ts.readConfigFile(configFilePath, ts.sys.readFile);
 
+    console.log(`using ${configFilePath} to build`);
+
+    const configFile = ts.readConfigFile(configFilePath, ts.sys.readFile);
+    
     if (configFile.error) {
         throw new Error(configFile.error.messageText.toString());
     }
@@ -31,7 +33,8 @@ const getConfigAndFiles = () => {
 
     return { 
         options: parsedConfig.options, 
-        fileNames: parsedConfig.fileNames 
+        fileNames: parsedConfig.fileNames,
+        configFilePath,
     };
 }
 
@@ -119,11 +122,12 @@ const transpileFiles = (
     return emitResult.emittedFiles;
 }
 
-const transformFiles = (
+const transformFiles = async (
     options: ts.CompilerOptions,
+    tscAliasOptions?: ReplaceTscAliasPathsOptions,
 ) => {
-    if (options.baseUrl && options.paths) {     
-        replaceTscAliasPaths(options);
+    if (options.baseUrl && options.paths) { 
+        await replaceTscAliasPaths(tscAliasOptions);
     }
 
     if (options.outDir) {
@@ -154,8 +158,13 @@ const transformFiles = (
     
 }
 
-(() => {
-    const { options, fileNames } = getConfigAndFiles();
+(async () => {
+    const startTime = performance.now();
+    const { 
+        options, 
+        fileNames,
+        configFilePath,
+    } = await getConfigAndFiles();
     
     const filesToTranspile = filterFiles(
         fileNames, 
@@ -168,5 +177,11 @@ const transformFiles = (
 
     transpileFiles(filesToTranspile, options);
 
-    transformFiles(options);
+    await transformFiles(options, {
+        configFile: configFilePath,
+    });
+
+    const endTime = performance.now();
+    const timeDiffSec = (endTime - startTime) / 1000;
+    console.log(`builded in ${timeDiffSec.toFixed(2)} second(s)`);
 })();

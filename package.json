@@ -1,6 +1,6 @@
 {
     "name": "@lesnoypudge/builder",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "type": "module",
     "main": "./build/index.js",
     "bin": {
@@ -9,7 +9,7 @@
     "scripts": {
         "publish": "npm publish --access public",
         "deploy": "git add . && git commit -m 'update' && git push && git status",
-        "build": "node --experimental-strip-types ./src/index.ts --file tsconfig.build.json"
+        "build": "node --experimental-strip-types ./src/index.ts --file tsconfig.node.build.json"
     },
     "keywords": [
         "lesnoypudge",
@@ -19,8 +19,9 @@
     "license": "ISC",
     "description": "",
     "devDependencies": {
-        "@lesnoypudge/formatter-config": "^5.0.0",
-        "@types/node": "^22.9.0",
+        "@lesnoypudge/formatter-config": "^6.1.0",
+        "@lesnoypudge/types-global-base": "^4.0.0",
+        "@lesnoypudge/types-global-node": "^1.0.0",
         "@types/yargs": "^17.0.33"
     },
     "dependencies": {
