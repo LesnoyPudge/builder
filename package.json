@@ -9,7 +9,8 @@
     "scripts": {
         "publish": "npm publish --access public",
         "deploy": "git add . && git commit -m 'update' && git push && git status",
-        "build": "node --experimental-strip-types ./src/index.ts --file tsconfig.node.build.json"
+        "build": "node --experimental-strip-types ./src/index.ts --file tsconfig.node.build.json",
+        "test": "node --experimental-strip-types ./src/index.ts --file tsconfig.test.build.json"
     },
     "keywords": [
         "lesnoypudge",

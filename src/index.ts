@@ -148,6 +148,21 @@ const transformFiles = async (
                         somePath,
                     )
 
+                    if (somePath === newRelativePath) {
+                        // console.log({
+                        //     somePath, 
+                        //     newRelativePath,
+                        //     filePath: file.path
+                        // })
+                        // const _path = path.resolve(
+                        //     path.dirname(file.path), 
+                        //     somePath
+                        // );
+                        // console.log(options.rootDir)
+                        // // console.log(path.isAbsolute(somePath))
+                        // console.log('exists?:', _path, fs.existsSync(_path))
+                    }
+
                     return `${leftQuote}${newRelativePath}${rightQuote}`;
                 },
             );
