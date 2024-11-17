@@ -1,16 +1,16 @@
 {
     "name": "@lesnoypudge/builder",
-    "version": "2.0.1",
+    "version": "3.0.0",
     "type": "module",
-    "main": "./build/index.js",
+    "main": "./build/builder.js",
     "bin": {
-        "builder": "build/index.js"
+        "builder": "build/cli.js"
     },
     "scripts": {
         "publish": "npm publish --access public",
         "deploy": "git add . && git commit -m 'update' && git push && git status",
-        "build": "node --experimental-strip-types ./src/index.ts --file tsconfig.node.build.json",
-        "test": "node --experimental-strip-types ./src/index.ts --file tsconfig.test.build.json"
+        "build": "tsx ./src/cli.ts --configName=tsconfig.node.build.json",
+        "test": "tsx ./src/cli.ts --configName=tsconfig.test.build.json"
     },
     "keywords": [
         "lesnoypudge",
@@ -23,11 +23,12 @@
         "@lesnoypudge/formatter-config": "^6.1.0",
         "@lesnoypudge/types-global-base": "^4.0.0",
         "@lesnoypudge/types-global-node": "^1.0.0",
-        "@types/yargs": "^17.0.33"
+        "@types/yargs": "^17.0.33",
+        "tsx": "^4.19.2"
     },
     "dependencies": {
-        "@lesnoypudge/utils": "^14.1.0",
-        "tsc-alias": "^1.8.10",
+        "@lesnoypudge/types-utils-base": "^3.4.1",
+        "@lesnoypudge/utils": "^16.1.0",
         "typescript": "^5.6.3",
         "yargs": "^17.7.2"
     }

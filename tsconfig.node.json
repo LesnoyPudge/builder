@@ -10,5 +10,6 @@
             "@lesnoypudge/types-global-base",
             "@lesnoypudge/types-global-node",
         ],
+        "allowImportingTsExtensions": true,
     }
 }
