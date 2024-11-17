@@ -2,7 +2,7 @@
 import { invariant } from "@lesnoypudge/utils";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { builder } from "./builder.ts";
+import { builder } from "./builder.js";
 
 
 

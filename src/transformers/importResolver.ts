@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { Transformer } from "../types.ts";
+import { Transformer } from "../types.js";
 import path from "node:path";
 import { invariant } from "@lesnoypudge/utils";
 import fs from "node:fs";

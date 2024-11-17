@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { JSFileNameToDataMap, Transformer } from "../types.ts";
+import { JSFileNameToDataMap, Transformer } from "../types.js";
 
 
 

@@ -5,7 +5,7 @@ import {
     parseConfig,
     processJSFiles,
     processTSFiles,
-} from "./components/index.ts";
+} from "./components/index.js";
 import path from 'node:path';
 
 

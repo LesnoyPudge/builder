@@ -1,1 +1,1 @@
-export * from './pathReplacer.ts';
+export * from './pathReplacer.js';

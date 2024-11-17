@@ -1,5 +1,5 @@
-import { JSFileNameToDataMap } from "../types.ts";
-import { pathReplacer } from "../replacers/index.ts";
+import { JSFileNameToDataMap } from "../types.js";
+import { pathReplacer } from "../replacers/index.js";
 import { T } from "@lesnoypudge/types-utils-base/namespace";
 import fs from 'node:fs/promises';
 

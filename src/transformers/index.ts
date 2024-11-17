@@ -1,1 +1,1 @@
-export * from './importResolver.ts';
+export * from './importResolver.js';
