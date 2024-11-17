@@ -6,7 +6,7 @@ import ts from "typescript";
 
 
 type Options = {
-    rootPath: string;
+    projectRoot: string;
     filePath: string;
     data: string;
     compilerOptions: ts.CompilerOptions;
@@ -30,7 +30,7 @@ const isEndsAsFile = (filePath: string) => {
     )
 }
 
-const lookForPathRelativeToRoot = ({
+const findAbsolutePath = ({
     compareList,
     rootPath,
     text,
@@ -40,37 +40,106 @@ const lookForPathRelativeToRoot = ({
     compareList: string[],
 }) => {
     const baseFilePath = path.join(rootPath, text);
-    // const directPathTS = `${baseFilePath}.ts`;
-    const directPathJS = `${baseFilePath}.js`;
-    // const indexPathTS = path.join(baseFilePath, 'index.ts');
-    const indexPathJS = path.join(baseFilePath, 'index.js');
-
-    // if (
-    //     compareList.includes(indexPathTS)
-    //     || fs.existsSync(indexPathTS)
-    // ) {
-    //     return deNormalize(`${path.normalize(text)}/index.js`); 
-    // }
-
-    // if (
-    //     compareList.includes(directPathTS)
-    //     || fs.existsSync(directPathTS)
-    // ) {
-    //     return deNormalize(`${text}.js`);
-    // }
+    const directPathJS = deNormalize(`${baseFilePath}.js`);
+    const indexPathJS = deNormalize(path.join(baseFilePath, 'index.js'));
     
     if (
         compareList.includes(indexPathJS)
         || fs.existsSync(indexPathJS)
     ) {
-        return deNormalize(`${path.normalize(text)}/index.js`); 
+        return indexPathJS; 
     }
     
     if (
         compareList.includes(directPathJS)
         || fs.existsSync(directPathJS)
     ) {
-        return deNormalize(`${text}.js`);
+        return directPathJS;
+    }
+
+    return text;
+}
+
+const findAbsolutePath2 = ({
+    compareList,
+    rootPath,
+    text,
+    rootBuildDirname,
+    fileDir,
+}: {
+    fileDir: string;
+    rootPath: string, 
+    text: string,
+    compareList: string[],
+    rootBuildDirname: string,
+}) => {
+    let textToModify = text;
+
+    switch (true) {
+        case textToModify.startsWith(`./${rootBuildDirname}`): {
+            textToModify = path.join(rootPath, textToModify);
+            break;
+        }
+
+        case textToModify.startsWith('..'): {
+            textToModify = path.join(fileDir, textToModify)
+            break;
+        }
+        
+        default: {
+            textToModify = path.join(fileDir, textToModify);
+        }
+    }
+
+    const directAbsPath = deNormalize(`${textToModify}.js`);
+    const indexAbsPath = deNormalize(path.join(textToModify, 'index.js'));
+
+    if (
+        compareList.includes(indexAbsPath)
+        || fs.existsSync(indexAbsPath)
+    ) {
+        return indexAbsPath; 
+    }
+    
+    if (
+        compareList.includes(directAbsPath)
+        || fs.existsSync(directAbsPath)
+    ) {
+        return directAbsPath;
+    }
+
+    return textToModify;
+}
+
+const findAbsolutePath3 = ({
+    text,
+    compareList,
+    root,
+}: {
+    text: string;
+    compareList: string[];
+    root: string;
+}) => {
+    const almostAbsolutePath = path.resolve(
+        root,
+        text,
+    );
+
+    const directAbsPath = deNormalize(`${almostAbsolutePath}.js`);
+    const indexAbsPath = deNormalize(path.join(almostAbsolutePath, 'index.js'));
+
+    if (
+        compareList.includes(indexAbsPath)
+        || fs.existsSync(indexAbsPath)
+    ) {
+        return indexAbsPath; 
+    }
+    
+    if (
+        compareList.includes(directAbsPath)
+        || fs.existsSync(directAbsPath)
+    ) {
+        return directAbsPath;
     }
 
     return text;
@@ -80,46 +149,75 @@ export const pathReplacer = ({
     compilerOptions,
     data,
     filePath,
-    rootPath,
+    projectRoot,
     fileNames,
 }: Options) => {
-    let text = data;
+    let textToModify = data;
+    invariant(compilerOptions.outDir);
+    const rootBuildDirname = path.basename(compilerOptions.outDir);
 
-    if (text.startsWith('@') && !compilerOptions.paths) {
-        return text;
+    if (textToModify.startsWith('@') && !compilerOptions.paths) {
+        return textToModify;
     }
 
-    if (text.startsWith('@')) {
-        const paths = compilerOptions.paths!;
-        const aliasArr = paths[text];
+    // path alias to relative
+    if (textToModify.startsWith('@')) {
+        const paths = compilerOptions.paths;
+        invariant(paths);
 
-        if (!aliasArr) return text;
-        
-        invariant(aliasArr[0]);
-        text = aliasArr[0];
+        let aliasValue = paths[textToModify]?.[0];
+        // external module (@lesnoypudge)
+        if (!aliasValue) return textToModify;
+
+        if (aliasValue.startsWith('src')) {
+            aliasValue = aliasValue.replace(
+                'src',
+                rootBuildDirname,
+            )
+        }
+
+        if (aliasValue.startsWith('./src')) {
+            aliasValue = aliasValue.replace(
+                './src',
+                `./${rootBuildDirname}`,
+            )
+        }
+
+        const absoluteModulePath = findAbsolutePath3({
+            compareList: fileNames,
+            root: projectRoot,
+            text: aliasValue,
+        })
+
+        if (!path.isAbsolute(absoluteModulePath)) {
+            throw new Error(`cannot find absolute path for path alias ${aliasValue}`);
+        }
+
+        const modulePathRelativeToFilePath = deNormalize(path.relative(
+            path.dirname(filePath),
+            absoluteModulePath
+        ))
+
+        return modulePathRelativeToFilePath;
     }
 
-    if (text.startsWith('./src')) {
-        invariant(compilerOptions.outDir);
-        text = text.replace(
-            'src', 
-            path.basename(compilerOptions.outDir)
-        );
-    }
+    const isExternalModule = !(
+        textToModify.startsWith('..')
+        ||textToModify.startsWith('./')
+    );
 
-    if (isEndsAsFile(text)) return text;
+    if (isExternalModule) return textToModify;
 
-    const newText = lookForPathRelativeToRoot({
+    const moduleAbsolutePath = findAbsolutePath3({
+        text: textToModify,
         compareList: fileNames,
-        rootPath,
-        text,
+        root: path.dirname(filePath),
     });
+
+    const modulePathRelativeToFilePath = deNormalize(path.relative(
+        path.dirname(filePath),
+        moduleAbsolutePath,
+    ))
     
-    if (newText !== text) return newText;
-
-    return lookForPathRelativeToRoot({
-        compareList: fileNames,
-        rootPath: path.dirname(filePath),
-        text,
-    });
+    return modulePathRelativeToFilePath;
 }

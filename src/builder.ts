@@ -56,7 +56,7 @@ export const builder = async ({
     await processJSFiles({
         jsMap: jsFilePathToDataMap,
         compilerOptions: parsedConfig.options,
-        rootPath: path.resolve(
+        projectRoot: path.resolve(
             path.dirname(configFilePath),
             parsedConfig.options.baseUrl ?? "",
         )
