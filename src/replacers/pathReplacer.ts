@@ -125,8 +125,17 @@ const findAbsolutePath3 = ({
         text,
     );
 
-    const directAbsPath = deNormalize(`${almostAbsolutePath}.js`);
-    const indexAbsPath = deNormalize(path.join(almostAbsolutePath, 'index.js'));
+    const directAbsPath = (
+        almostAbsolutePath.endsWith('.js')
+            ? almostAbsolutePath
+            : deNormalize(`${almostAbsolutePath}.js`)
+    );
+
+    const indexAbsPath = (
+        almostAbsolutePath.endsWith('.js')
+            ? almostAbsolutePath
+            : deNormalize(path.join(almostAbsolutePath, 'index.js'))
+    );
 
     if (
         compareList.includes(indexAbsPath)
