@@ -178,6 +178,10 @@ export const pathReplacer = ({
         // external module (@lesnoypudge)
         if (!aliasValue) return textToModify;
 
+        if (aliasValue.endsWith('.ts')) {
+            aliasValue = `${aliasValue.slice(0, -3)}.js`
+        }
+
         if (aliasValue.startsWith('src')) {
             aliasValue = aliasValue.replace(
                 'src',
@@ -199,6 +203,12 @@ export const pathReplacer = ({
         })
 
         if (!path.isAbsolute(absoluteModulePath)) {
+            console.log({
+                filePath,
+                aliasValue,
+                absoluteModulePath,
+            });
+
             throw new Error(`cannot find absolute path for path alias ${aliasValue}`);
         }
 
@@ -212,10 +222,14 @@ export const pathReplacer = ({
 
     const isExternalModule = !(
         textToModify.startsWith('..')
-        ||textToModify.startsWith('./')
+        || textToModify.startsWith('./')
     );
 
     if (isExternalModule) return textToModify;
+
+    if (textToModify.endsWith('.ts')) {
+        textToModify = `${textToModify.slice(0, -3)}.js`
+    }
 
     const moduleAbsolutePath = findAbsolutePath3({
         text: textToModify,

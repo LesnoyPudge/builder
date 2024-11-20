@@ -18,9 +18,7 @@ export const processJSFiles = async ({
     jsMap,
     ...replacerOption
 }: Options) => {
-    await Promise.all([
-        ...jsMap.entries()
-    ].map(async ([filePath, data]) => {
+    for (const [filePath, data] of jsMap.entries()) {
         const updatedData = data.replace(
             pathRegex,
             (match, leftQuote, pathToReplace, rightQuote) => {
@@ -35,6 +33,26 @@ export const processJSFiles = async ({
             },
         );
 
-        return fs.writeFile(filePath, updatedData, 'utf8');
-    }));
+        fs.writeFile(filePath, updatedData, 'utf8');
+    }
+
+    // await Promise.all([
+    //     ...jsMap.entries()
+    // ].map(async ([filePath, data]) => {
+    //     const updatedData = data.replace(
+    //         pathRegex,
+    //         (match, leftQuote, pathToReplace, rightQuote) => {
+    //             const newPath = pathReplacer({
+    //                 ...replacerOption,
+    //                 fileNames: [...jsMap.keys()],
+    //                 filePath,
+    //                 data: pathToReplace,
+    //             })
+
+    //             return `${leftQuote}${newPath}${rightQuote}`;
+    //         },
+    //     );
+
+    //     return fs.writeFile(filePath, updatedData, 'utf8');
+    // }));
 }
