@@ -174,7 +174,54 @@ export const pathReplacer = ({
         const paths = compilerOptions.paths;
         invariant(paths);
 
+        const pathNames = Object.keys(paths);
+        const pathNamesWithWildcard = pathNames.filter((name) => {
+            return name.endsWith('/*');
+        })
+        const pathNamesWithoutWildcard = pathNames.filter((name) => {
+            return !name.endsWith('/*');
+        })
+
         let aliasValue = paths[textToModify]?.[0];
+        
+        if (!aliasValue) {
+            const namesWithOmittedWildcard = pathNamesWithWildcard.map((name) => {
+                return name.slice(0, -1);
+            });
+
+            const possibleNames = namesWithOmittedWildcard.filter((name) => {
+                return textToModify.startsWith(name);
+            });
+
+            if (possibleNames.length !== 0) {
+                let possibleName = possibleNames[0]!;
+
+                for (const name of possibleNames) {
+                    if (name.length > possibleName.length) {
+                        possibleName = name;
+                    }
+                }
+
+                let newAliasValue = paths[`${possibleName}*`]?.[0];
+                invariant(newAliasValue)
+
+                newAliasValue = (
+                    newAliasValue.endsWith('/*')
+                        ? newAliasValue.slice(0, -2)
+                        :  newAliasValue
+                )
+
+                const textWithoutAlias = textToModify.slice(
+                    possibleName.length
+                );
+
+                aliasValue = deNormalize(path.join(
+                    newAliasValue,
+                    textWithoutAlias,
+                ))
+            }
+        }
+
         // external module (@lesnoypudge)
         if (!aliasValue) return textToModify;
 
