@@ -13,102 +13,18 @@ type Options = {
     fileNames: string[];
 }
 
+const replaceSlashes = (text: string) => {
+    return text.replace(/\\/g, '/');
+}
+
 const deNormalize = (text: string) => {
     const shouldNotAddPrefix = (
         text.startsWith('..') 
         || text.startsWith('./')
         || path.isAbsolute(text)
     )
-    const tmp = shouldNotAddPrefix ? text : `./${text}`;
-    return tmp.replace(/\\/g, '/');
-}
 
-const isEndsAsFile = (filePath: string) => {
-    return (
-        filePath.endsWith('.ts')
-        || filePath.endsWith('.js')
-    )
-}
-
-const findAbsolutePath = ({
-    compareList,
-    rootPath,
-    text,
-}: {
-    rootPath: string, 
-    text: string,
-    compareList: string[],
-}) => {
-    const baseFilePath = path.join(rootPath, text);
-    const directPathJS = deNormalize(`${baseFilePath}.js`);
-    const indexPathJS = deNormalize(path.join(baseFilePath, 'index.js'));
-    
-    if (
-        compareList.includes(indexPathJS)
-        || fs.existsSync(indexPathJS)
-    ) {
-        return indexPathJS; 
-    }
-    
-    if (
-        compareList.includes(directPathJS)
-        || fs.existsSync(directPathJS)
-    ) {
-        return directPathJS;
-    }
-
-    return text;
-}
-
-const findAbsolutePath2 = ({
-    compareList,
-    rootPath,
-    text,
-    rootBuildDirname,
-    fileDir,
-}: {
-    fileDir: string;
-    rootPath: string, 
-    text: string,
-    compareList: string[],
-    rootBuildDirname: string,
-}) => {
-    let textToModify = text;
-
-    switch (true) {
-        case textToModify.startsWith(`./${rootBuildDirname}`): {
-            textToModify = path.join(rootPath, textToModify);
-            break;
-        }
-
-        case textToModify.startsWith('..'): {
-            textToModify = path.join(fileDir, textToModify)
-            break;
-        }
-        
-        default: {
-            textToModify = path.join(fileDir, textToModify);
-        }
-    }
-
-    const directAbsPath = deNormalize(`${textToModify}.js`);
-    const indexAbsPath = deNormalize(path.join(textToModify, 'index.js'));
-
-    if (
-        compareList.includes(indexAbsPath)
-        || fs.existsSync(indexAbsPath)
-    ) {
-        return indexAbsPath; 
-    }
-    
-    if (
-        compareList.includes(directAbsPath)
-        || fs.existsSync(directAbsPath)
-    ) {
-        return directAbsPath;
-    }
-
-    return textToModify;
+    return replaceSlashes(shouldNotAddPrefix ? text : `./${text}`);
 }
 
 const findAbsolutePath3 = ({
@@ -154,140 +70,242 @@ const findAbsolutePath3 = ({
     return text;
 }
 
-export const pathReplacer = ({
-    compilerOptions,
-    data,
-    filePath,
-    projectRoot,
-    fileNames,
-}: Options) => {
-    let textToModify = data;
-    invariant(compilerOptions.outDir);
-    const rootBuildDirname = path.basename(compilerOptions.outDir);
+const fixTsExt = (text: string): string => {
+    if (text.endsWith('.ts')) {
+        return `${text.slice(0, -3)}.js`
+    }
 
-    if (textToModify.startsWith('@') && !compilerOptions.paths) {
+    return text;
+}
+
+const fixAbsoluteSrc = (
+    options: Options,
+    text: string,
+): string => {
+    if (text.startsWith('src')) {
+        const outDir = options.compilerOptions.outDir;
+        invariant(outDir)
+
+        return text.replace(
+            'src',
+            path.basename(outDir),
+        )
+    }
+
+    return text;
+}
+
+const fixRelativeSrc = (
+    options: Options,
+    text: string,
+): string => {
+    if (text.startsWith('./src')) {
+        const outDir = options.compilerOptions.outDir;
+        invariant(outDir)
+
+        return text.replace(
+            './src',
+            `./${path.basename(outDir)}`,
+        )
+    }
+
+    return text;
+}
+
+const resolvePathRelativeToRootOrExternal = (
+    options: Options,
+    pathRelativeToRoot: string,
+): string => {
+    let textToModify = pathRelativeToRoot;
+
+    // console.log(
+    //     'resolvePathRelativeToRootOrExternal\n',
+    //     textToModify,
+    //     '\n\n',
+    // )
+    
+    textToModify = fixTsExt(textToModify);
+    textToModify = fixRelativeSrc(options, textToModify);
+    textToModify = fixAbsoluteSrc(options, textToModify);
+
+    const absoluteModulePath = findAbsolutePath3({
+        compareList: options.fileNames,
+        root: options.projectRoot,
+        text: textToModify,
+    })
+
+    if (!path.isAbsolute(absoluteModulePath)) {
         return textToModify;
     }
 
-    // path alias to relative
-    if (textToModify.startsWith('@')) {
-        const paths = compilerOptions.paths;
-        invariant(paths);
+    const modulePathRelativeToFilePath = deNormalize(path.relative(
+        path.dirname(options.filePath),
+        absoluteModulePath
+    ))
 
-        const pathNames = Object.keys(paths);
-        const pathNamesWithWildcard = pathNames.filter((name) => {
-            return name.endsWith('/*');
-        })
-        const pathNamesWithoutWildcard = pathNames.filter((name) => {
-            return !name.endsWith('/*');
-        })
+    return modulePathRelativeToFilePath;
+}
 
-        let aliasValue = paths[textToModify]?.[0];
-        
-        if (!aliasValue) {
-            const namesWithOmittedWildcard = pathNamesWithWildcard.map((name) => {
-                return name.slice(0, -1);
-            });
+const resolvePathRelativeToCurrentFileOrExternal = (
+    options: Options,
+    pathRelativeToCurrentFile: string,
+): string => {
+    let textToModify = pathRelativeToCurrentFile;
 
-            const possibleNames = namesWithOmittedWildcard.filter((name) => {
-                return textToModify.startsWith(name);
-            });
+    // console.log(
+    //     'resolvePathRelativeToCurrentFileOrExternal\n',
+    //     textToModify,
+    //     '\n\n',
+    // )
+    
+    textToModify = fixTsExt(textToModify);
 
-            if (possibleNames.length !== 0) {
-                let possibleName = possibleNames[0]!;
+    textToModify = fixRelativeSrc(options, textToModify);
 
-                for (const name of possibleNames) {
-                    if (name.length > possibleName.length) {
-                        possibleName = name;
-                    }
-                }
+    textToModify = fixAbsoluteSrc(options, textToModify);
 
-                let newAliasValue = paths[`${possibleName}*`]?.[0];
-                invariant(newAliasValue)
-
-                newAliasValue = (
-                    newAliasValue.endsWith('/*')
-                        ? newAliasValue.slice(0, -2)
-                        :  newAliasValue
-                )
-
-                const textWithoutAlias = textToModify.slice(
-                    possibleName.length
-                );
-
-                aliasValue = deNormalize(path.join(
-                    newAliasValue,
-                    textWithoutAlias,
-                ))
-            }
-        }
-
-        // external module (@lesnoypudge)
-        if (!aliasValue) return textToModify;
-
-        if (aliasValue.endsWith('.ts')) {
-            aliasValue = `${aliasValue.slice(0, -3)}.js`
-        }
-
-        if (aliasValue.startsWith('src')) {
-            aliasValue = aliasValue.replace(
-                'src',
-                rootBuildDirname,
-            )
-        }
-
-        if (aliasValue.startsWith('./src')) {
-            aliasValue = aliasValue.replace(
-                './src',
-                `./${rootBuildDirname}`,
-            )
-        }
-
-        const absoluteModulePath = findAbsolutePath3({
-            compareList: fileNames,
-            root: projectRoot,
-            text: aliasValue,
-        })
-
-        if (!path.isAbsolute(absoluteModulePath)) {
-            console.log({
-                filePath,
-                aliasValue,
-                absoluteModulePath,
-            });
-
-            throw new Error(`cannot find absolute path for path alias ${aliasValue}`);
-        }
-
-        const modulePathRelativeToFilePath = deNormalize(path.relative(
-            path.dirname(filePath),
-            absoluteModulePath
-        ))
-
-        return modulePathRelativeToFilePath;
-    }
-
-    const isExternalModule = !(
-        textToModify.startsWith('..')
-        || textToModify.startsWith('./')
-    );
-
-    if (isExternalModule) return textToModify;
-
-    if (textToModify.endsWith('.ts')) {
-        textToModify = `${textToModify.slice(0, -3)}.js`
-    }
-
-    const moduleAbsolutePath = findAbsolutePath3({
+    const absoluteModulePath = findAbsolutePath3({
+        compareList: options.fileNames,
+        root: path.dirname(options.filePath),
         text: textToModify,
-        compareList: fileNames,
-        root: path.dirname(filePath),
-    });
+    })
+
+    if (!path.isAbsolute(absoluteModulePath)) {
+        return textToModify;
+    }
 
     const modulePathRelativeToFilePath = deNormalize(path.relative(
-        path.dirname(filePath),
-        moduleAbsolutePath,
+        path.dirname(options.filePath),
+        absoluteModulePath
     ))
-    
+
     return modulePathRelativeToFilePath;
+}
+
+const pathAliasToPathRelativeToRoot = (
+    options: Options,
+    pathAlias: string,
+): string => {
+    // console.log(
+    //     'pathAliasToPathRelativeToRoot\n',
+    //     pathAlias,
+    //     '\n\n',
+    // )
+
+    const paths = options.compilerOptions.paths;
+    invariant(paths);
+
+    let aliasValue = paths[pathAlias]?.[0];
+    if (aliasValue) return aliasValue;
+
+    const pathNames = Object.keys(paths);
+    const namesWithOmittedWildcard = pathNames.map((name) => {
+        return name.endsWith('/*') ? name.slice(0, -1) : undefined;
+    }).filter(Boolean);
+
+    const possibleNames = namesWithOmittedWildcard.filter((name) => {
+        return pathAlias.startsWith(name);
+    });
+
+    if (possibleNames.length === 0) return pathAlias;
+    
+    let possibleName = possibleNames[0]!;
+
+    if (possibleNames.length > 1) {
+        for (const name of possibleNames) {
+            if (name.length > possibleName.length) {
+                possibleName = name;
+            }
+        }
+    }
+    const newAliasValue = paths[`${possibleName}*`]?.[0];
+    invariant(newAliasValue)
+
+    const newNormalizedAliasValue = (
+        newAliasValue.endsWith('/*')
+            ? newAliasValue.slice(0, -2)
+            :  newAliasValue
+    )
+
+    const textWithoutAlias = pathAlias.slice(
+        possibleName.length
+    );
+
+    return replaceSlashes(path.join(
+        newNormalizedAliasValue,
+        textWithoutAlias,
+    ))
+}
+
+let nodeModulesSet: Set<string>;
+
+const getIsFromNodeModules = (
+    options: Options,
+    possiblyExternalPath: string,
+): boolean => {
+    if (!nodeModulesSet) {
+        nodeModulesSet = new Set();
+
+        fs.readdirSync(options.projectRoot).map((fileOrDir) => {
+            const stats = fs.statSync(fileOrDir);
+            return stats.isDirectory() ? fileOrDir : undefined
+        }).filter(Boolean).forEach((dir) => {
+            nodeModulesSet.add(dir);
+        });
+    }
+
+    const firstPart = possiblyExternalPath.split('/')[0]!;
+    
+    return nodeModulesSet.has(firstPart);
+}
+
+export const pathReplacer = (options: Options) => {
+    const {
+        compilerOptions,
+        data,
+    } = options;
+    
+    let textToModify = data;
+    invariant(compilerOptions.outDir);
+
+    const isExternal = (
+        textToModify.startsWith('@') 
+        && !compilerOptions.paths
+    );
+    if (isExternal) {
+        return textToModify;
+    }
+
+    const isPossiblePathAlias = (
+        textToModify.startsWith('@') 
+        && compilerOptions.paths
+    )
+    if (isPossiblePathAlias) {
+        return resolvePathRelativeToRootOrExternal(
+            options,
+            pathAliasToPathRelativeToRoot(
+                options,
+                textToModify,
+            )
+        )
+    }
+
+    if (textToModify.startsWith('src')) {
+        return resolvePathRelativeToRootOrExternal(
+            options,
+            textToModify,
+        );
+    }
+
+    if (getIsFromNodeModules(
+        options,
+        textToModify,
+    )) {
+        return textToModify;
+    }
+
+    return resolvePathRelativeToCurrentFileOrExternal(
+        options,
+        textToModify,
+    )
 }

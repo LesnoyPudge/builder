@@ -4,7 +4,8 @@
         "src/**/*"
     ],
     "exclude": [
-        "src/**/*.test.*"
+        "src/**/*.test.*",
+        "src/**/test*",
     ],
     "compilerOptions": {
         "noEmit": false,

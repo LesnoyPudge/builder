@@ -28,6 +28,11 @@ export const processJSFiles = async ({
                     filePath,
                     data: pathToReplace,
                 })
+                
+                // console.log({
+                //     original: pathToReplace,
+                //     new: newPath,
+                // })
 
                 return `${leftQuote}${newPath}${rightQuote}`;
             },
