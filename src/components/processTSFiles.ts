@@ -21,7 +21,7 @@ export const processTSFiles = ({
         filePathsToProcess, 
         compilerOptions,
     );
-
+    
     const emitResult = program.emit(
         undefined,
         async (fileName, text, mark) => {

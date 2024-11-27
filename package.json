@@ -1,6 +1,6 @@
 {
     "name": "@lesnoypudge/builder",
-    "version": "4.0.0",
+    "version": "4.0.1",
     "type": "module",
     "main": "./build/builder.js",
     "bin": {
@@ -10,7 +10,8 @@
         "publish": "npm publish --access public",
         "deploy": "git add . && git commit -m 'update' && git push && git status",
         "build": "tsx ./src/cli.ts --configName=tsconfig.node.build.json",
-        "test": "tsx ./src/cli.ts --configName=tsconfig.test.build.json"
+        "test": "tsx ./src/cli.ts --configName=tsconfig.test.build.json",
+        "prepublishOnly": "npm run build"
     },
     "keywords": [
         "lesnoypudge",

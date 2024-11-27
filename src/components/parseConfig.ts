@@ -40,6 +40,8 @@ export const parseConfig = async (
         path.dirname(configFilePath)
     );
 
+    parsedConfig.options.noEmit = false;
+
     return { 
         parsedConfig,
         configFilePath,
