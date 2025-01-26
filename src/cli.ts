@@ -1,18 +1,15 @@
 #!/usr/bin/env node
-import { invariant } from "@lesnoypudge/utils";
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import { builder } from "./builder.js";
-import { getArgs } from "./components/index.js";
+import { builder } from './builder';
+import { getArgs } from './utils';
 
 
 
-(async () => {
-    const {configName, verbose} = getArgs();
+void (async () => {
+    const { configName, verbose } = await getArgs();
 
-    builder({
+    await builder({
         configName,
         verbose,
         logTime: true,
-    })
+    });
 })();

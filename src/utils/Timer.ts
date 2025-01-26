@@ -6,8 +6,6 @@ export class Timer {
     private endTime = 0;
     private diff = 0;
 
-    constructor() {}
-
     start() {
         this.startTime = performance.now();
     }

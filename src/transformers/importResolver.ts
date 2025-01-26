@@ -1,8 +1,8 @@
-import ts from "typescript";
-import { Transformer } from "../types.js";
-import path from "node:path";
-import { invariant } from "@lesnoypudge/utils";
-import fs from "node:fs";
+import ts from 'typescript';
+import { Transformer } from '../types.js';
+import path from 'node:path';
+import { invariant } from '@lesnoypudge/utils';
+import fs from 'node:fs';
 
 
 
@@ -10,38 +10,38 @@ type Options = {
     configFilePath: string;
     compilerOptions: ts.CompilerOptions;
     filePathsToProcess: string[];
-}
+};
 
 type ReplacerOptions = {
     textToModify: string;
     sourceFile: ts.SourceFile;
-}
+};
 
 const deNormalize = (text: string) => {
     const shouldNotAddPrefix = (
-        text.startsWith('..') 
+        text.startsWith('..')
         || text.startsWith('./')
         || path.isAbsolute(text)
-    )
+    );
     const tmp = shouldNotAddPrefix ? text : `./${text}`;
-    return tmp.replace(/\\/g, '/');
-}
+    return tmp.replaceAll('\\', '/');
+};
 
 const isEndsAsFile = (filePath: string) => {
     return (
         filePath.endsWith('.ts')
         || filePath.endsWith('.js')
-    )
-}
+    );
+};
 
 const lookForPathRelativeToRoot = ({
     compareList,
     rootPath,
     text,
 }: {
-    rootPath: string, 
-    text: string,
-    compareList: string[],
+    rootPath: string;
+    text: string;
+    compareList: string[];
 }) => {
     const baseFilePath = path.join(rootPath, text);
     const directPathTS = `${baseFilePath}.ts`;
@@ -53,7 +53,7 @@ const lookForPathRelativeToRoot = ({
         compareList.includes(indexPathTS)
         || fs.existsSync(indexPathTS)
     ) {
-        return deNormalize(`${path.normalize(text)}/index.js`); 
+        return deNormalize(`${path.normalize(text)}/index.js`);
     }
 
     if (
@@ -62,14 +62,14 @@ const lookForPathRelativeToRoot = ({
     ) {
         return deNormalize(`${text}.js`);
     }
-    
+
     if (
         compareList.includes(indexPathJS)
         || fs.existsSync(indexPathJS)
     ) {
-        return deNormalize(`${path.normalize(text)}/index.js`); 
+        return deNormalize(`${path.normalize(text)}/index.js`);
     }
-    
+
     if (
         compareList.includes(directPathJS)
         || fs.existsSync(directPathJS)
@@ -78,7 +78,7 @@ const lookForPathRelativeToRoot = ({
     }
 
     return text;
-}
+};
 
 const createReplacer = ({
     configFilePath,
@@ -87,8 +87,8 @@ const createReplacer = ({
 }: Options) => {
     const rootPath = path.resolve(
         path.dirname(configFilePath),
-        compilerOptions.baseUrl ?? "",
-    )
+        compilerOptions.baseUrl ?? '',
+    );
 
     return ({ sourceFile, textToModify }: ReplacerOptions) => {
         let text = textToModify;
@@ -98,7 +98,8 @@ const createReplacer = ({
         }
 
         if (text.startsWith('@')) {
-            const paths = compilerOptions.paths!;
+            const paths = compilerOptions.paths;
+            invariant(paths);
             const aliasArr = paths[text];
 
             if (!aliasArr) return text;
@@ -121,11 +122,11 @@ const createReplacer = ({
             rootPath: path.dirname(sourceFile.fileName),
             text,
         });
-    }
-}
+    };
+};
 
 export const createImportResolverTransformer = (
-    options: Options
+    options: Options,
 ): Transformer => {
     const replacer = createReplacer(options);
 
@@ -144,19 +145,20 @@ export const createImportResolverTransformer = (
                     return ts.visitEachChild(node, visitor, context);
                 }
 
+                invariant(node.moduleSpecifier);
                 const moduleSpecifier = (
-                    node.moduleSpecifier!
+                    node.moduleSpecifier
                         .getText()
-                        .replace(/"|'/g, "")
+                        .replaceAll(/"|'/g, '')
                 );
 
                 const newPath = replacer({
                     sourceFile,
                     textToModify: moduleSpecifier,
                 });
-        
+
                 const literal = ts.factory.createStringLiteral(
-                    newPath
+                    newPath,
                 );
 
                 if (ts.isImportDeclaration(node)) {
@@ -180,10 +182,10 @@ export const createImportResolverTransformer = (
                     );
                 }
 
-                throw new Error("never");
+                throw new Error('never');
             };
-            
+
             return ts.visitNode(sourceFile, visitor).getSourceFile();
-        }
-    }
-}
+        };
+    };
+};

@@ -6,7 +6,7 @@ import path from 'node:path';
 type Options = {
     configName: string;
     verbose: boolean;
-}
+};
 
 type Return = Promise<{
     parsedConfig: ts.ParsedCommandLine;
@@ -14,11 +14,11 @@ type Return = Promise<{
 }>;
 
 export const parseConfig = async (
-    options: Options
+    options: Options,
 ): Return => {
     const configFilePath = path.join(
         process.cwd(),
-        `/${options.configName}`
+        `/${options.configName}`,
     );
 
     if (options.verbose) {
@@ -26,10 +26,10 @@ export const parseConfig = async (
     }
 
     const configFile = ts.readConfigFile(
-        configFilePath, 
-        ts.sys.readFile
+        configFilePath,
+        ts.sys.readFile,
     );
-    
+
     if (configFile.error) {
         throw new Error(configFile.error.messageText.toString());
     }
@@ -37,13 +37,13 @@ export const parseConfig = async (
     const parsedConfig = ts.parseJsonConfigFileContent(
         configFile.config,
         ts.sys,
-        path.dirname(configFilePath)
+        path.dirname(configFilePath),
     );
 
     parsedConfig.options.noEmit = false;
 
-    return { 
+    return {
         parsedConfig,
         configFilePath,
     };
-}
+};

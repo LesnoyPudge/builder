@@ -5,12 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "command": "npm run build",
-            "name": "Run npm run build",
-            "request": "launch",
-            "type": "node-terminal"
-        },
-        {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost",

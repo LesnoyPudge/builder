@@ -8,11 +8,19 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "eslint.format.enable": true,
     "typescript.tsdk": "node_modules\\typescript\\lib",
-    "editor.rulers": [80],
+    "editor.rulers": [
+        80
+    ],
     "[javascriptreact][typescriptreact]": {
-        "editor.rulers": [80, 100]
+        "editor.rulers": [
+            80,
+            100
+        ]
     },
     "[json][jsonc]": {
-        "editor.rulers": [100]
+        "editor.rulers": [
+            100
+        ],
+        "editor.defaultFormatter": "vscode.json-language-features"
     }
 }

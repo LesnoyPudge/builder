@@ -1,16 +1,17 @@
 {
     "name": "@lesnoypudge/builder",
-    "version": "4.0.1",
+    "version": "5.0.0",
     "type": "module",
-    "main": "./build/builder.js",
+    "main": "./build/index.js",
+    "types": "./build/index.d.ts",
     "bin": {
-        "builder": "build/cli.js"
+        "builder": "./build/cli.js"
     },
     "scripts": {
         "publish": "npm publish --access public",
         "deploy": "git add . && git commit -m 'update' && git push && git status",
-        "build": "tsx ./src/cli.ts --configName=tsconfig.node.build.json",
-        "test": "tsx ./src/cli.ts --configName=tsconfig.test.build.json",
+        "buildCustom": "tsx ./src/cli.ts --configName=tsconfig.node.build.json",
+        "build": "vite build",
         "prepublishOnly": "npm run build"
     },
     "keywords": [
@@ -24,7 +25,8 @@
     "license": "ISC",
     "description": "",
     "devDependencies": {
-        "@lesnoypudge/formatter-config": "^6.1.0",
+        "@lesnoypudge/eslint-config": "^6.1.0",
+        "@lesnoypudge/formatter-config": "^8.0.0",
         "@lesnoypudge/types-global-base": "^4.0.0",
         "@lesnoypudge/types-global-node": "^1.0.0",
         "@types/yargs": "^17.0.33",
@@ -32,8 +34,15 @@
     },
     "dependencies": {
         "@lesnoypudge/types-utils-base": "^3.4.1",
-        "@lesnoypudge/utils": "^16.1.0",
-        "typescript": "^5.6.3",
+        "@lesnoypudge/utils": "^16.3.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "glob": "^11.0.1",
+        "typescript": "^5.7.3",
+        "vite": "^6.0.11",
+        "vite-plugin-checker": "^0.8.0",
+        "vite-plugin-dts": "^4.5.0",
+        "vite-plugin-lib-inject-css": "^2.2.1",
+        "vite-tsconfig-paths": "^5.1.4",
         "yargs": "^17.7.2"
     }
 }

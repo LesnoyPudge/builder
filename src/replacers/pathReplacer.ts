@@ -1,7 +1,7 @@
-import { invariant } from "@lesnoypudge/utils";
-import fs from "node:fs";
-import path from "node:path";
-import ts from "typescript";
+import { invariant } from '@lesnoypudge/utils';
+import fs from 'node:fs';
+import path from 'node:path';
+import ts from 'typescript';
 
 
 
@@ -11,21 +11,21 @@ type Options = {
     data: string;
     compilerOptions: ts.CompilerOptions;
     fileNames: string[];
-}
+};
 
 const replaceSlashes = (text: string) => {
-    return text.replace(/\\/g, '/');
-}
+    return text.replaceAll('\\', '/');
+};
 
 const deNormalize = (text: string) => {
     const shouldNotAddPrefix = (
-        text.startsWith('..') 
+        text.startsWith('..')
         || text.startsWith('./')
         || path.isAbsolute(text)
-    )
+    );
 
     return replaceSlashes(shouldNotAddPrefix ? text : `./${text}`);
-}
+};
 
 const findAbsolutePath3 = ({
     text,
@@ -57,9 +57,9 @@ const findAbsolutePath3 = ({
         compareList.includes(indexAbsPath)
         || fs.existsSync(indexAbsPath)
     ) {
-        return indexAbsPath; 
+        return indexAbsPath;
     }
-    
+
     if (
         compareList.includes(directAbsPath)
         || fs.existsSync(directAbsPath)
@@ -68,15 +68,15 @@ const findAbsolutePath3 = ({
     }
 
     return text;
-}
+};
 
 const fixTsExt = (text: string): string => {
     if (text.endsWith('.ts')) {
-        return `${text.slice(0, -3)}.js`
+        return `${text.slice(0, -3)}.js`;
     }
 
     return text;
-}
+};
 
 const fixAbsoluteSrc = (
     options: Options,
@@ -84,16 +84,16 @@ const fixAbsoluteSrc = (
 ): string => {
     if (text.startsWith('src')) {
         const outDir = options.compilerOptions.outDir;
-        invariant(outDir)
+        invariant(outDir);
 
         return text.replace(
             'src',
             path.basename(outDir),
-        )
+        );
     }
 
     return text;
-}
+};
 
 const fixRelativeSrc = (
     options: Options,
@@ -101,16 +101,16 @@ const fixRelativeSrc = (
 ): string => {
     if (text.startsWith('./src')) {
         const outDir = options.compilerOptions.outDir;
-        invariant(outDir)
+        invariant(outDir);
 
         return text.replace(
             './src',
             `./${path.basename(outDir)}`,
-        )
+        );
     }
 
     return text;
-}
+};
 
 const resolvePathRelativeToRootOrExternal = (
     options: Options,
@@ -123,7 +123,7 @@ const resolvePathRelativeToRootOrExternal = (
     //     textToModify,
     //     '\n\n',
     // )
-    
+
     textToModify = fixTsExt(textToModify);
     textToModify = fixRelativeSrc(options, textToModify);
     textToModify = fixAbsoluteSrc(options, textToModify);
@@ -132,7 +132,7 @@ const resolvePathRelativeToRootOrExternal = (
         compareList: options.fileNames,
         root: options.projectRoot,
         text: textToModify,
-    })
+    });
 
     if (!path.isAbsolute(absoluteModulePath)) {
         return textToModify;
@@ -140,11 +140,11 @@ const resolvePathRelativeToRootOrExternal = (
 
     const modulePathRelativeToFilePath = deNormalize(path.relative(
         path.dirname(options.filePath),
-        absoluteModulePath
-    ))
+        absoluteModulePath,
+    ));
 
     return modulePathRelativeToFilePath;
-}
+};
 
 const resolvePathRelativeToCurrentFileOrExternal = (
     options: Options,
@@ -157,7 +157,7 @@ const resolvePathRelativeToCurrentFileOrExternal = (
     //     textToModify,
     //     '\n\n',
     // )
-    
+
     textToModify = fixTsExt(textToModify);
 
     textToModify = fixRelativeSrc(options, textToModify);
@@ -168,7 +168,7 @@ const resolvePathRelativeToCurrentFileOrExternal = (
         compareList: options.fileNames,
         root: path.dirname(options.filePath),
         text: textToModify,
-    })
+    });
 
     if (!path.isAbsolute(absoluteModulePath)) {
         return textToModify;
@@ -176,11 +176,11 @@ const resolvePathRelativeToCurrentFileOrExternal = (
 
     const modulePathRelativeToFilePath = deNormalize(path.relative(
         path.dirname(options.filePath),
-        absoluteModulePath
-    ))
+        absoluteModulePath,
+    ));
 
     return modulePathRelativeToFilePath;
-}
+};
 
 const pathAliasToPathRelativeToRoot = (
     options: Options,
@@ -195,7 +195,7 @@ const pathAliasToPathRelativeToRoot = (
     const paths = options.compilerOptions.paths;
     invariant(paths);
 
-    let aliasValue = paths[pathAlias]?.[0];
+    const aliasValue = paths[pathAlias]?.[0];
     if (aliasValue) return aliasValue;
 
     const pathNames = Object.keys(paths);
@@ -208,7 +208,7 @@ const pathAliasToPathRelativeToRoot = (
     });
 
     if (possibleNames.length === 0) return pathAlias;
-    
+
     let possibleName = possibleNames[0]!;
 
     if (possibleNames.length > 1) {
@@ -219,23 +219,23 @@ const pathAliasToPathRelativeToRoot = (
         }
     }
     const newAliasValue = paths[`${possibleName}*`]?.[0];
-    invariant(newAliasValue)
+    invariant(newAliasValue);
 
     const newNormalizedAliasValue = (
         newAliasValue.endsWith('/*')
             ? newAliasValue.slice(0, -2)
-            :  newAliasValue
-    )
+            : newAliasValue
+    );
 
     const textWithoutAlias = pathAlias.slice(
-        possibleName.length
+        possibleName.length,
     );
 
     return replaceSlashes(path.join(
         newNormalizedAliasValue,
         textWithoutAlias,
-    ))
-}
+    ));
+};
 
 let nodeModulesSet: Set<string>;
 
@@ -248,28 +248,28 @@ const getIsFromNodeModules = (
 
         fs.readdirSync(options.projectRoot).map((fileOrDir) => {
             const stats = fs.statSync(fileOrDir);
-            return stats.isDirectory() ? fileOrDir : undefined
+            return stats.isDirectory() ? fileOrDir : undefined;
         }).filter(Boolean).forEach((dir) => {
             nodeModulesSet.add(dir);
         });
     }
 
     const firstPart = possiblyExternalPath.split('/')[0]!;
-    
+
     return nodeModulesSet.has(firstPart);
-}
+};
 
 export const pathReplacer = (options: Options) => {
     const {
         compilerOptions,
         data,
     } = options;
-    
-    let textToModify = data;
+
+    const textToModify = data;
     invariant(compilerOptions.outDir);
 
     const isExternal = (
-        textToModify.startsWith('@') 
+        textToModify.startsWith('@')
         && !compilerOptions.paths
     );
     if (isExternal) {
@@ -277,17 +277,17 @@ export const pathReplacer = (options: Options) => {
     }
 
     const isPossiblePathAlias = (
-        textToModify.startsWith('@') 
+        textToModify.startsWith('@')
         && compilerOptions.paths
-    )
+    );
     if (isPossiblePathAlias) {
         return resolvePathRelativeToRootOrExternal(
             options,
             pathAliasToPathRelativeToRoot(
                 options,
                 textToModify,
-            )
-        )
+            ),
+        );
     }
 
     if (textToModify.startsWith('src')) {
@@ -307,5 +307,5 @@ export const pathReplacer = (options: Options) => {
     return resolvePathRelativeToCurrentFileOrExternal(
         options,
         textToModify,
-    )
-}
+    );
+};

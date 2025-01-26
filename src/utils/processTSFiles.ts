@@ -1,14 +1,14 @@
-import ts from "typescript";
-import { JSFileNameToDataMap, Transformer } from "../types.js";
+import ts from 'typescript';
+import { JSFileNameToDataMap, Transformer } from '../types.js';
 
 
 
 type Options = {
-    compilerOptions: ts.CompilerOptions
+    compilerOptions: ts.CompilerOptions;
     filePathsToProcess: string[];
     beforeTransformers?: Transformer[];
     afterTransformers?: Transformer[];
-}
+};
 
 export const processTSFiles = ({
     compilerOptions,
@@ -18,30 +18,30 @@ export const processTSFiles = ({
 }: Options) => {
     const jsFilePathToDataMap: JSFileNameToDataMap = new Map();
     const program = ts.createProgram(
-        filePathsToProcess, 
+        filePathsToProcess,
         compilerOptions,
     );
-    
+
     const emitResult = program.emit(
         undefined,
-        async (fileName, text, mark) => {
+        (fileName, text, mark) => {
             jsFilePathToDataMap.set(fileName, text);
-            
+
             ts.sys.writeFile(fileName, text, mark);
         },
-        undefined, 
+        undefined,
         false,
         {
             before: beforeTransformers,
             after: afterTransformers,
-        }
+        },
     );
 
     if (emitResult.emitSkipped) {
-        throw new Error("Failed to emit");
+        throw new Error('Failed to emit');
     }
 
     return {
         jsFilePathToDataMap,
     };
-}
+};
