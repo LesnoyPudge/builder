@@ -99,7 +99,6 @@ export const getViteLibraryConfig = (
     } as const;
 
     const _pluginOptions = {
-        tsconfigPaths: { projects: [tsconfigPath] },
         dts: { tsconfigPath },
         checker: { typescript: true },
     };
@@ -113,7 +112,7 @@ export const getViteLibraryConfig = (
             plugins: [
                 plugins.checker(pluginOptions.checker),
                 plugins.dts(pluginOptions.dts),
-                plugins.tsconfigPaths(pluginOptions.tsconfigPaths),
+                plugins.tsconfigPaths(),
             ],
         });
     };
